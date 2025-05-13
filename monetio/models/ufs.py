@@ -225,7 +225,7 @@ def open_mfdataset(
     # These sums and units are quite expensive and memory intensive,
     # so add option to shrink dataset to just surface when needed
     if surf_only:
-        dset = _isel_surface_level_(dset)
+        dset = dset.isel(z=0).expand_dims("z", axis=1)
 
     # Need to adjust units before summing for aerosols
     # convert all gas species to ppbv
@@ -283,11 +283,9 @@ def open_mfdataset(
         if bool(list_remove_extra_only):  # confirm list not empty
             dset = dset.drop_vars(list_remove_extra_only)
 
+    # # tdk:rm
+    # dset.to_netcdf("/opt/project/local-data/baseline.nc")
     return dset
-
-
-def _isel_surface_level_(dset: xr.Dataset) -> xr.Dataset:
-    return dset.isel(z=0).expand_dims("z", axis=1)
 
 
 def _get_keys(d):
@@ -1120,4 +1118,5 @@ def _calc_pressure(dset):
     p.name = "pres_pa_mid"
     p.attrs["units"] = "pa"
     p.attrs["long_name"] = "Pressure Mid Layer in Pa"
+
     return p
