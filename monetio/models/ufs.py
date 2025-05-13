@@ -197,6 +197,8 @@ def open_mfdataset(
         }
     )  # Optional, but when available include altitude info
 
+    dset["dz_m"] = dset["dz_m"] * -1.0  # Change to positive values.
+
     # Calculate pressure. This has to go before sorting because ak and bk
     # are not sorted as they are in attributes
     dset["pres_pa_mid"] = _calc_pressure(dset)
@@ -206,7 +208,6 @@ def open_mfdataset(
         dset = dset.isel(z=slice(None, None, -1))  # -> decreasing
     if np.all(np.diff(dset.z_i.values) > 0):  # increasing pressure
         dset = dset.isel(z_i=slice(None, None, -1))  # -> decreasing
-    dset["dz_m"] = dset["dz_m"] * -1.0  # Change to positive values.
 
     # Note this altitude calcs needs to always go after resorting.
     # Altitude calculations are all optional, but for each model add values that are easy to calculate.
@@ -1071,17 +1072,18 @@ def _calc_hgt(dset: xr.Dataset) -> xr.DataArray:
     xarray.DataArray
         Geopotential height
     """
-    # Get surface altitude
-    sfc = dset.surfalt_m
-
-    # Get the vertical displacement and flip sign as needed
+    # # Get surface altitude
+    # sfc = dset.surfalt_m
+    #
+    # # Get the vertical displacement and flip sign as needed
     dz = dset.dz_m * -1.0
 
     # Add surface elevation
-    dz = dz.where(~(dz.z == dz.z[0]), dz + sfc)
+    # dz = dset.dz_m
+    # dz = dz.where(~(dz.z == dz.z[0]), dz + dset.surfalt_m)
 
     # Calculate cumulative sum along z dimension to get heights
-    z = dz.cumsum(dim="z")
+    z = dz.cumsum(dim="z") + dset.surfalt_m
 
     # Set attributes
     z.name = "alt_msl_m_full"
