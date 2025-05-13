@@ -5,7 +5,5 @@ RUN apt-get update --yes && apt-get install --yes tmux vim less
 COPY environment-dev.yml .
 # -e will break the Docker build
 RUN sed -i '/"-e \."$/s/^/# /' environment-dev.yml
-# Add pre-commit to dependencies
-RUN sed -i '/^dependencies:/a\- pre-commit' environment.yml
 
 RUN conda env create --file environment-dev.yml
