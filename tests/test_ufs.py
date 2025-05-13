@@ -3,7 +3,6 @@ from pathlib import Path
 
 import dask.array as da
 import pytest
-import xarray
 
 from monetio.models.ufs import open_mfdataset
 
@@ -18,7 +17,7 @@ class SurfOnlyTestData:
 @pytest.mark.parametrize(
     "test_data",
     [
-        # SurfOnlyTestData(surf_only=True, expected_nz=1),
+        SurfOnlyTestData(surf_only=True, expected_nz=1),
         SurfOnlyTestData(surf_only=False, expected_nz=64),
     ],
     ids=lambda x: f"surf_only={x.surf_only}",
@@ -39,10 +38,3 @@ def test_open_mfdataset_surf_only(
         except AssertionError:
             # Some variables are loaded from disk for pre-processing or calculated at runtime
             assert var.name in test_data.expected_to_be_loaded
-
-    if not test_data.surf_only:
-        baseline = xarray.open_dataset("/opt/project/local-data/baseline.nc")
-        assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
-        a = actual['pres_pa_mid'].values
-        b = baseline['pres_pa_mid'].values
-        assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])

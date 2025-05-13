@@ -1060,31 +1060,36 @@ def dict_species_sums(mech):
     return sum_dict
 
 
-def _calc_hgt(f):
-    """Calculates the geopotential height in m from the variables hgtsfc and
-    delz. Note: To use this function the delz value needs to go from surface
-    to top of atmosphere in vertical. Because we are adding the height of
-    each grid box these are really grid top values
+def _calc_hgt(dset: xr.Dataset) -> xr.DataArray:
+    """Calculate the geopotential height in m.
 
     Parameters
     ----------
-    f : xarray.Dataset
-        RRFS-CMAQ model data
+    dset : xarray.Dataset
+        The UFS dataset
 
     Returns
     -------
-    xr.DataArray
-        Geoptential height with attributes.
+    xarray.DataArray
+        Geopotential height
     """
-    sfc = f.surfalt_m.load()
-    dz = f.dz_m.load() * -1.0
-    # These are negative in RRFS-CMAQ, but you resorted and are adding from the surface,
-    # so make them positive.
-    dz[:, 0, :, :] = dz[:, 0, :, :] + sfc  # Add the surface altitude to the first model level only
-    z = dz.rolling(z=len(f.z), min_periods=1).sum()
+    # Get surface altitude
+    sfc = dset.surfalt_m
+
+    # Get the vertical displacement and flip sign as needed
+    dz = dset.dz_m * -1.0
+
+    # Add surface elevation
+    dz = dz.where(~(dz.z == dz.z[0]), dz + sfc)
+
+    # Calculate cumulative sum along z dimension to get heights
+    z = dz.cumsum(dim='z')
+
+    # Set attributes
     z.name = "alt_msl_m_full"
     z.attrs["long_name"] = "Altitude MSL Full Layer in Meters"
     z.attrs["units"] = "m"
+
     return z
 
 
