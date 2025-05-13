@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dask.array as da
-import numpy as np
 import pytest
 import xarray
 
@@ -38,10 +37,12 @@ def test_open_mfdataset_surf_only(
         try:
             assert isinstance(var.data, da.Array)
         except AssertionError:
-            # Some variables are loaded from disk for pre-processing
+            # Some variables are loaded from disk for pre-processing or calculated at runtime
             assert var.name in test_data.expected_to_be_loaded
 
     if not test_data.surf_only:
         baseline = xarray.open_dataset("/opt/project/local-data/baseline.nc")
         assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
+        a = actual['pres_pa_mid'].values
+        b = baseline['pres_pa_mid'].values
         assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])

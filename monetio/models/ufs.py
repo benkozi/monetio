@@ -1088,35 +1088,39 @@ def _calc_hgt(f):
     return z
 
 
-def _calc_pressure(dset):
-    """Calculate the mid-layer pressure in Pa from surface pressure
-    and ak and bk constants.
-
-    Interface pressures are calculated by:
-    phalf(k) = a(k) + surfpres * b(k)
-
-    Mid layer pressures are calculated by:
-    pfull(k) = (phalf(k+1)-phalf(k))/log(phalf(k+1)/phalf(k))
+def _calc_pressure(dset: xr.Dataset) -> xr.DataArray:
+    """Calculate the mid-layer pressure in Pa.
 
     Parameters
     ----------
     dset : xarray.Dataset
-        RRFS-CMAQ model data
+        The UFS dataset
 
     Returns
     -------
     xarray.DataArray
-        Mid-layer pressure with attributes.
+        Mid-layer pressure
     """
-    p = dset.dp_pa.copy().load()  # Have to load into memory here so can assign levels.
-    psfc = dset.surfpres_pa.copy().load()
-    for k in range(len(dset.z)):
-        pres_2 = dset.ak[k + 1] + psfc * dset.bk[k + 1]
-        pres_1 = dset.ak[k] + psfc * dset.bk[k]
-        p[:, k, :, :] = (pres_2 - pres_1) / np.log(pres_2 / pres_1)
+    # Get surface pressure for calculation
+    psfc = dset.surfpres_pa.expand_dims(dim={"z": dset.z.size}, axis=1)
 
-    p.name = "pres_pa_mid"
-    p.attrs["units"] = "pa"
-    p.attrs["long_name"] = "Pressure Mid Layer in Pa"
+    # Calculate pressure at each layer boundary using vectorized operations
+    # First, calculate pressure at layer interfaces using ak and bk coefficients
+    ak = xr.DataArray(dset.ak, dims="z")
+    bk = xr.DataArray(dset.bk, dims="z")
+    p_interfaces_1 = ak[:-1] + psfc * bk[:-1]  # Upper interface of each layer
+    p_interfaces_2 = ak[1:] + psfc * bk[1:]  # Lower interface of each layer
 
-    return p
+    # Calculate mid-layer pressure using log-average
+    # log(p_mid) = (p_2 - p_1) / ln(p_2/p_1)
+    # This preserves all dimensions and allows lazy evaluation
+    p_mid = (p_interfaces_2 - p_interfaces_1) / np.log(p_interfaces_2 / p_interfaces_1)
+    p_mid = p_mid.transpose(*dset.pm25_ave.dims)
+
+
+    # Set attributes
+    p_mid.name = "pres_pa_mid"
+    p_mid.attrs["units"] = "pa"
+    p_mid.attrs["long_name"] = "Pressure Mid Layer in Pa"
+
+    return p_mid
