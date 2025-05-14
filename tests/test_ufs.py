@@ -5,6 +5,7 @@ import dask.array as da
 import pytest
 
 from monetio.models.ufs import open_mfdataset
+import xarray as xr
 
 
 @dataclass
@@ -23,7 +24,8 @@ class SurfOnlyTestData:
     ids=lambda x: f"surf_only={x.surf_only}",
 )
 def test_open_mfdataset_surf_only(data_dir: Path, test_data: SurfOnlyTestData) -> None:
-    actual = open_mfdataset(str(data_dir / "ufs" / "aqm.t12z.dyn.f*.nc"), surf_only=test_data.surf_only)
+    ufs_data_dir = data_dir / "ufs"
+    actual = open_mfdataset(str(ufs_data_dir / "aqm.t12z.dyn.f*.nc"), surf_only=test_data.surf_only)
 
     for var in actual.data_vars.values():
         shape_dict = {dim: actual.sizes[dim] for dim in var.dims}
@@ -37,10 +39,11 @@ def test_open_mfdataset_surf_only(data_dir: Path, test_data: SurfOnlyTestData) -
             assert var.name in test_data.expected_to_be_loaded
 
     if not test_data.surf_only:
-        import xarray
-        baseline = xarray.open_dataset("/opt/project/local-data/baseline.nc")
-        assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
-        assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])
+        with xr.open_dataset(ufs_data_dir / "baseline-20250512.nc") as baseline:
+            assert actual.equals(baseline)
+        # print(actual['alt_msl_m_full'].values.sum(), baseline['alt_msl_m_full'].values.sum())
+        # assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
+        # assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])
 
 
 
