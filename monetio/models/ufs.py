@@ -1,4 +1,4 @@
-""" RRFS-CMAQ File Reader """
+""" UFS-AQM File Reader """
 
 import numpy as np
 import xarray as xr
@@ -50,7 +50,7 @@ def open_mfdataset(
     Returns
     -------
     xarray.DataSet
-        RRFS-CMAQ model dataset in standard format for use in MELODIES-MONET
+        UFS-AQM model dataset in standard format for use in MELODIES-MONET
 
     """
 
@@ -1078,7 +1078,7 @@ def _calc_hgt(dset: xr.Dataset) -> xr.DataArray:
     # so make them positive.
     dz = dset.dz_m * -1.0
 
-    # Add surface elevation to everything except surface elevations
+    # Add surface elevation to everything except surface
     dz = dz.where(~(dz.z == dz.z[0]), dz + dset.surfalt_m)
 
     # Calculate cumulative sum along z dimension to get heights
