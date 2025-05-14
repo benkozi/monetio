@@ -39,11 +39,14 @@ def test_open_mfdataset_surf_only(data_dir: Path, test_data: SurfOnlyTestData) -
             assert var.name in test_data.expected_to_be_loaded
 
     if not test_data.surf_only:
-        with xr.open_dataset(ufs_data_dir / "baseline-20250512.nc") as baseline:
+        with xr.open_dataset(ufs_data_dir / "baseline-20250514.nc") as baseline:
             assert actual.equals(baseline)
-        # print(actual['alt_msl_m_full'].values.sum(), baseline['alt_msl_m_full'].values.sum())
-        # assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
-        # assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])
+            # print(actual['alt_msl_m_full'].values.sum(), baseline['alt_msl_m_full'].values.sum())
+            # diff = actual['alt_msl_m_full'].values - baseline['alt_msl_m_full'].values
+            # print(diff.min(), diff.max())
+            # xr.testing.assert_allclose(actual['alt_msl_m_full'], baseline['alt_msl_m_full'])
+            # # assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
+            # assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])
 
 
 

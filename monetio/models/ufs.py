@@ -1059,30 +1059,30 @@ def dict_species_sums(mech):
 
 
 def _calc_hgt(dset: xr.Dataset) -> xr.DataArray:
-    """Calculate the geopotential height in m.
+    """Calculates the geopotential height in m from the variables hgtsfc and
+    delz. Note: To use this function the delz value needs to go from surface
+    to top of atmosphere in vertical. Because we are adding the height of
+    each grid box these are really grid top values.
 
     Parameters
     ----------
     dset : xarray.Dataset
-        The UFS dataset
+        UFS-AQM model data
 
     Returns
     -------
-    xarray.DataArray
-        Geopotential height
+    xr.DataArray
+        Geopotential height with attributes.
     """
-    # # Get surface altitude
-    # sfc = dset.surfalt_m
-    #
-    # # Get the vertical displacement and flip sign as needed
+    # These are negative in UFS-AQM, but we resorted and are adding from the surface,
+    # so make them positive.
     dz = dset.dz_m * -1.0
 
-    # Add surface elevation
-    # dz = dset.dz_m
-    # dz = dz.where(~(dz.z == dz.z[0]), dz + dset.surfalt_m)
+    # Add surface elevation to everything except surface elevations
+    dz = dz.where(~(dz.z == dz.z[0]), dz + dset.surfalt_m)
 
     # Calculate cumulative sum along z dimension to get heights
-    z = dz.cumsum(dim="z") + dset.surfalt_m
+    z = dz.cumsum(dim="z")
 
     # Set attributes
     z.name = "alt_msl_m_full"
