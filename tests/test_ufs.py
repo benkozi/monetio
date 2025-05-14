@@ -9,7 +9,7 @@ import xarray as xr
 
 
 @dataclass
-class SurfOnlyTestData:
+class DataForTest:
     surf_only: bool
     expected_nz: int
     expected_to_be_loaded: tuple[str, ...] = ("dz_m", "surfalt_m", "pres_pa_mid", "alt_msl_m_full")
@@ -18,12 +18,12 @@ class SurfOnlyTestData:
 @pytest.mark.parametrize(
     "test_data",
     [
-        SurfOnlyTestData(surf_only=True, expected_nz=1),
-        SurfOnlyTestData(surf_only=False, expected_nz=64),
+        DataForTest(surf_only=True, expected_nz=1),
+        DataForTest(surf_only=False, expected_nz=64),
     ],
     ids=lambda x: f"surf_only={x.surf_only}",
 )
-def test_open_mfdataset_surf_only(data_dir: Path, test_data: SurfOnlyTestData) -> None:
+def test_open_mfdataset(data_dir: Path, test_data: DataForTest) -> None:
     ufs_data_dir = data_dir / "ufs"
     actual = open_mfdataset(str(ufs_data_dir / "aqm.t12z.dyn.f*.nc"), surf_only=test_data.surf_only)
 
@@ -38,16 +38,10 @@ def test_open_mfdataset_surf_only(data_dir: Path, test_data: SurfOnlyTestData) -
             # Some variables are loaded from disk for pre-processing or calculated at runtime
             assert var.name in test_data.expected_to_be_loaded
 
+    # Baseline is for full level profile
     if not test_data.surf_only:
         with xr.open_dataset(ufs_data_dir / "baseline-20250514.nc") as baseline:
             assert actual.equals(baseline)
-            # print(actual['alt_msl_m_full'].values.sum(), baseline['alt_msl_m_full'].values.sum())
-            # diff = actual['alt_msl_m_full'].values - baseline['alt_msl_m_full'].values
-            # print(diff.min(), diff.max())
-            # xr.testing.assert_allclose(actual['alt_msl_m_full'], baseline['alt_msl_m_full'])
-            # # assert actual['alt_msl_m_full'].equals(baseline['alt_msl_m_full'])
-            # assert actual['pres_pa_mid'].equals(baseline['pres_pa_mid'])
-
 
 
 def test_deprecated_rrfs_cmaq_mm() -> None:

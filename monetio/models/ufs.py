@@ -1084,9 +1084,8 @@ def _calc_hgt(dset: xr.Dataset) -> xr.DataArray:
     # Calculate cumulative sum along z dimension to get heights
     z = dz.cumsum(dim="z")
 
-    # Set attributes
     z.name = "alt_msl_m_full"
-    z.attrs["long_name"] = "Altitude MSL Full Layer in Meters"
+    z.attrs["long_name"] = "altitude above MSL at full layer tops"
     z.attrs["units"] = "m"
 
     return z
@@ -1119,11 +1118,10 @@ def _calc_pressure(dset: xr.Dataset) -> xr.DataArray:
     # log(p_mid) = (p_2 - p_1) / ln(p_2/p_1)
     # This preserves all dimensions and allows lazy evaluation
     p_mid = (p_interfaces_2 - p_interfaces_1) / np.log(p_interfaces_2 / p_interfaces_1)
-    p_mid = p_mid.transpose(*dset.pm25_ave.dims)
+    p_mid = p_mid.transpose("time", "z", "y", "x")
 
-    # Set attributes
     p_mid.name = "pres_pa_mid"
-    p_mid.attrs["units"] = "pa"
-    p_mid.attrs["long_name"] = "Pressure Mid Layer in Pa"
+    p_mid.attrs["units"] = "Pa"
+    p_mid.attrs["long_name"] = "mid-layer pressure"
 
     return p_mid
